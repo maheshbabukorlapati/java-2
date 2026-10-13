@@ -1,0 +1,75 @@
+class Buffer {
+    int item;
+    boolean available = false;
+
+    synchronized void produce(int value) {
+        try {
+            while (available) {
+                wait();
+            }
+
+            item = value;
+            System.out.println("Produced: " + item);
+            available = true;
+            notifyAll();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    synchronized void consume() {
+        try {
+            while (!available) {
+                wait();
+            }
+
+            System.out.println("Consumed: " + item);
+            available = false;
+            notifyAll();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+class Producer extends Thread {
+    Buffer buffer;
+
+    Producer(Buffer buffer) {
+        this.buffer = buffer;
+    }
+
+    public void run() {
+        for (int i = 1; i <= 5; i++) {
+            buffer.produce(i);
+        }
+    }
+}
+
+class Consumer extends Thread {
+    Buffer buffer;
+
+    Consumer(Buffer buffer) {
+        this.buffer = buffer;
+    }
+
+    public void run() {
+        for (int i = 1; i <= 5; i++) {
+            buffer.consume();
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Buffer buffer = new Buffer();
+
+        Producer producer = new Producer(buffer);
+        Consumer consumer = new Consumer(buffer);
+
+        producer.start();
+        consumer.start();
+    }
+}
